@@ -1,0 +1,37 @@
+{
+  "name": "karma-selenium-webdriver-launcher",
+  "version": "0.0.1",
+  "description": "A Karma plugin. Run tests in an instance of a Selenium Webdriver.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/PixnBits/karma-selenium-webdriver-launcher.git"
+  },
+  "keywords": [
+    "karma-plugin",
+    "karma-launcher",
+    "browserstack",
+    "browser-stack"
+  ],
+  "author": "PixnBits <github@pixnbits.org>",
+  "dependencies": {
+    "q": "~0.9.6"
+  },
+  "peerDependencies": {
+    "karma": ">=0.9",
+    "selenium-webdriver": "^2.44.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-bump": "~0.0.7",
+    "grunt-npm": "~0.0.2",
+    "grunt-auto-release": "~0.0.2"
+  },
+  "contributors": [
+    "Vojta Jina <vojta.jina@gmail.com>"
+  ]
+}
