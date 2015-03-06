@@ -53,8 +53,10 @@ module.exports = function(config) {
 
 ### Browser options
 - `browserName` name of the browser (ideally we'll use `Capabilities` in the future)
-- `getDriver` function that will return a webdriver instance.
+- `getDriver` function that will return a webdriver instance to the karma test runner (not the test being run)
 
+## Additional Test API
+TODO (see [#3](https://github.com/PixnBits/karma-selenium-webdriver-launcher/issues/3))
 
 ----
 
