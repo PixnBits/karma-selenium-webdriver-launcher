@@ -9,12 +9,12 @@ function SeleniumWebdriverBrowser(id, emitter, args, logger, config) {
   var log = logger.create('launcher.selenium-webdriver');
   var browserName = args.browserName;
 
-  this.id = id;
+  self.id = id;
   self.setName(browserName);
 
   log.info('SeleniumWebdriverBrowser (kid:'+id+') created');
 
-  this.start = function(url){
+  self.start = function(url){
     log.info('starting '+self.name);
     var driver = args.getDriver();
     self.driver_ = driver;
@@ -28,11 +28,11 @@ function SeleniumWebdriverBrowser(id, emitter, args, logger, config) {
     driver.get(url);
   };
 
-  this.kill = function(){
+  self.kill = function(cb){
     self.getSession_(function(session){
       log.info('requested to kill, session id is '+(session && session.id_));
       if(session.id_){
-        this.driver_ && this.driver_.quit();
+        cb( self.driver_ && self.driver_.quit() );
       }
     });
   }
