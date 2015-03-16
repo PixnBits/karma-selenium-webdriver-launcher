@@ -70,6 +70,10 @@ SeleniumWebdriverBrowser.prototype.getSession_ = function(cb) {
   }
 };
 
+SeleniumWebdriverBrowser.prototype.isCaptured = function(){
+  return !!this.driver_;
+};
+
 SeleniumWebdriverBrowser.prototype.toString = function() {
   return this.name || 'Unnamed SeleniumWebdriverBrowser';
 };
