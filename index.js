@@ -1,13 +1,14 @@
 var q = require('q');
 //var webdriver = require('selenium-webdriver');
 
+function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
+  baseBrowserDecorator(this);
 
-
-function SeleniumWebdriverBrowser(id, emitter, args, logger, config) {
   var self = this;
   var captured = false;
   var log = logger.create('launcher.selenium-webdriver');
   var browserName = args.browserName;
+  var killingPromise;
 
   self.id = id;
   self.setName(browserName);
@@ -18,27 +19,52 @@ function SeleniumWebdriverBrowser(id, emitter, args, logger, config) {
     log.info('starting '+self.name);
     var driver = args.getDriver();
     self.driver_ = driver;
-    
+
     self.getSession_(function(session){
       // TODO: caps_ might be a defer as well
       self.setName(session.caps_.caps_);
     });
 
-    log.info('sending driver to url '+url);
-    driver.get(url);
+    log.info('sending driver to url '+url+'?id='+id);
+    driver.get(url+'?id='+id);
   };
 
-  self.kill = function(cb){
+  self.kill = function(){
+
+    // Already killed, or being killed.
+    if (killingPromise) {
+      return killingPromise;
+    }
+
+    var deferred = q.defer();
+
+    killingPromise = deferred.promise;
+
     self.getSession_(function(session){
       log.info('requested to kill, session id is '+(session && session.id_));
+
+      if (!session) {
+        return deferred.reject();
+      }
+
       if(session.id_){
-        cb( self.driver_ && self.driver_.quit() );
+        self.driver_ && self.driver_.quit();
+        deferred.resolve();
       }
     });
-  }
+
+    return killingPromise;
+
+  };
+
+  self.forceKill = function() {
+    self.kill();
+    return killingPromise;
+  };
 
 }
 
+SeleniumWebdriverBrowser.$inject = [ 'id', 'baseBrowserDecorator', 'args', 'logger' ];
 
 SeleniumWebdriverBrowser.prototype.setName = function(arg) {
   // arg is either string and assumed to be `browserName` parameter
