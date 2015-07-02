@@ -18,15 +18,24 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
   self.start = function(url){
     log.info('starting '+self.name);
     var driver = args.getDriver();
-    self.driver_ = driver;
 
-    self.getSession_(function(session){
-      // TODO: caps_ might be a defer as well
-      self.setName(session.caps_.caps_);
-    });
+    var cb = function (driver) {
+      self.driver_ = driver;
 
-    log.info('sending driver to url '+url+'?id='+id);
-    driver.get(url+'?id='+id);
+      self.getSession_(function(session){
+        // TODO: caps_ might be a defer as well
+        self.setName(session.caps_.caps_);
+      });
+
+      log.info('sending driver to url '+url+'?id='+id);
+      driver.get(url+'?id='+id);
+    };
+
+    if (driver.then) {
+      driver.then(cb);
+    } else {
+      cb(driver);
+    }
   };
 
   self.kill = function(){
