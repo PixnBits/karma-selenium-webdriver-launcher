@@ -49,6 +49,7 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
       if(session.id_) {
         self.driver_ && self.driver_.quit()
           .then(function() {
+            killingPromise = null;
             deferred.resolve();
           });
       }
