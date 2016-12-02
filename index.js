@@ -15,7 +15,7 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
 
   log.info('SeleniumWebdriverBrowser (kid:'+id+') created');
 
-  self.start = function(url){
+  self._start = function(url){
     log.info('starting '+self.name);
     var driver = args.getDriver();
     self.driver_ = driver;
@@ -25,8 +25,8 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
       self.setName(session.caps_.caps_);
     });
 
-    log.info('sending driver to url '+url+'?id='+id);
-    driver.get(url+'?id='+id);
+    log.info('sending driver to url '+url);
+    driver.get(url);
   };
 
   self.kill = function(){
@@ -37,7 +37,6 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     }
 
     var deferred = q.defer();
-
     killingPromise = deferred.promise;
 
     self.getSession_(function(session){
@@ -47,14 +46,15 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
         return deferred.reject();
       }
 
-      if(session.id_){
-        self.driver_ && self.driver_.quit();
-        deferred.resolve();
+      if(session.id_) {
+        self.driver_ && self.driver_.quit()
+          .then(function() {
+            deferred.resolve();
+          });
       }
     });
 
     return killingPromise;
-
   };
 
   self.forceKill = function() {
