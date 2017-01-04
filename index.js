@@ -37,7 +37,6 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     }
 
     var deferred = q.defer();
-
     killingPromise = deferred.promise;
 
     self.getSession_(function(session){
@@ -47,14 +46,16 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
         return deferred.reject();
       }
 
-      if(session.id_){
-        self.driver_ && self.driver_.quit();
-        deferred.resolve();
+      if(session.id_) {
+        self.driver_ && self.driver_.quit()
+          .then(function() {
+            killingPromise = null;
+            deferred.resolve();
+          });
       }
     });
 
     return killingPromise;
-
   };
 
   self.forceKill = function() {
