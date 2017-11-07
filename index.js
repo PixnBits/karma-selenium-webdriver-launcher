@@ -29,6 +29,7 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     driver.get(url).catch( function(error) {
       log.error('driver returned error: ' + error);
       if(!killingPromise) {
+        self._retryLimit = -1 // don't retry
         self._done(error);
       }
     });
@@ -57,7 +58,8 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
            self._done();
            deferred.resolve();
         }).catch( function(error){
-           self._done(error);
+           self.info('error while quittin session: ' + error);
+           self._done();
            deferred.reject();
         });
       } else {
