@@ -26,7 +26,11 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     });
 
     log.info('sending driver to url '+url);
-    driver.get(url);
+    driver.get(url).then(function(){
+		 self._done();
+	 }).catch( function(error){
+		 self._done(error);
+	 });
   };
 
   self.kill = function(){
@@ -47,9 +51,14 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
         return deferred.reject();
       }
 
-      if(session.id_){
-        self.driver_ && self.driver_.quit();
-        deferred.resolve();
+      if(session.id_ && self.driver_){
+        self.driver_.quit().then(function(){
+				  deferred.resolve();
+				  self._done();
+			  }).catch( function(error){
+					log.info('error while quitting browser session: ' + error);
+				  self._done();
+			  });
       }
     });
 
