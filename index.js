@@ -26,12 +26,12 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     });
 
     log.info('sending driver to url '+url);
-    driver.get(url).then(function(){
-		 self._done();
-	 }).catch( function(error){
-		 log.info('erroneous response from webdriver: ' + error);
-		 self._done(error);
-	 });
+    driver.get(url).catch( function(error) {
+      log.error('driver returned error: ' + error);
+      if(!killingPromise) {
+        self._done(error);
+      }
+    });
   };
 
   self.kill = function(){
@@ -54,13 +54,16 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
 
       if(session.id_ && self.driver_){
         self.driver_.quit().then(function(){
-				  deferred.resolve();
-				  self._done();
-			  }).catch( function(error){
-					log.info('error while quitting browser session: ' + error);
-				  self._done();
-			  });
-      }
+           self._done();
+           deferred.resolve();
+        }).catch( function(error){
+           self._done(error);
+           deferred.reject();
+        });
+      } else {
+        self._done('no webdriver session available');
+        deferred.reject();
+    }
     });
 
     return killingPromise;
