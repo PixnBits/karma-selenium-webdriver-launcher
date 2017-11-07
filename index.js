@@ -29,6 +29,7 @@ function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
     driver.get(url).then(function(){
 		 self._done();
 	 }).catch( function(error){
+		 log.info('erroneous response from webdriver: ' + error);
 		 self._done(error);
 	 });
   };
