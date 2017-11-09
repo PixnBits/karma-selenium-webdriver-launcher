@@ -1,108 +1,98 @@
-var q = require('q');
-//var webdriver = require('selenium-webdriver');
+var webdriver = require('selenium-webdriver');
 
-function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
-  baseBrowserDecorator(this);
-
-  var self = this;
-  var captured = false;
-  var log = logger.create('launcher.selenium-webdriver');
-  var browserName = args.browserName;
-  var killingPromise;
-
-  self.id = id;
-  self.setName(browserName);
-
-  log.info('SeleniumWebdriverBrowser (kid:'+id+') created');
-
-  self._start = function(url){
-    log.info('starting '+self.name);
-    var driver = args.getDriver();
-    self.driver_ = driver;
-
-    self.getSession_(function(session){
-      // TODO: caps_ might be a defer as well
-      self.setName(session.caps_.caps_);
-    });
-
-    log.info('sending driver to url '+url);
-    driver.get(url);
-  };
-
-  self.kill = function(){
-
-    // Already killed, or being killed.
-    if (killingPromise) {
-      return killingPromise;
-    }
-
-    var deferred = q.defer();
-
-    killingPromise = deferred.promise;
-
-    self.getSession_(function(session){
-      log.info('requested to kill, session id is '+(session && session.id_));
-
-      if (!session) {
-        return deferred.reject();
-      }
-
-      if(session.id_){
-        self.driver_ && self.driver_.quit();
-        deferred.resolve();
-      }
-    });
-
-    return killingPromise;
-
-  };
-
-  self.forceKill = function() {
-    self.kill();
-    return killingPromise;
-  };
-
+function browserNameFromCapabilities(caps) {
+	var browserName = caps.has(webdriver.Capability.BROWSER_NAME) ? caps.get(webdriver.Capability.BROWSER_NAME) : undefined;
+	if(caps.has(webdriver.Capability.VERSION)) {
+		browserName += (!!browserName ? ' ' : '') + caps.get(webdriver.Capability.VERSION);
+	}
+	if(caps.has(webdriver.Capability.PLATFORM)) {
+		browserName += (!!browserName ? ' ' : '') + '(' + caps.get(webdriver.Capability.PLATFORM) + ')';
+	}
+	return browserName;
 }
 
-SeleniumWebdriverBrowser.$inject = [ 'id', 'baseBrowserDecorator', 'args', 'logger' ];
+function SeleniumWebdriverBrowser(id, baseBrowserDecorator, args, logger) {
+	baseBrowserDecorator(this);
 
-SeleniumWebdriverBrowser.prototype.setName = function(arg) {
-  // arg is either string and assumed to be `browserName` parameter
-  // or is object, being the session capabilities
-  var browserName;
-  if('string' === typeof arg){
-    browserName = arg;
-  }else if(arg && arg.version){
-    browserName = (arg.browserName || arg.device) + (arg.version ? ' ' + arg.version : '') + ' (' + arg.platform +  ')';
-  }
+	var self = this;
+	var browserName = args.browserName;
+	var getDriver = args.getDriver;
+	var log = logger.create('launcher.selenium-webdriver');
 
-  if(browserName){
-    this.name = browserName + ' via Selenium Webdriver';
-    console.log('changed name to '+this.name);
-  }
-};
+	self.id = id;
+	self.setName(browserName);
+	self.driver_ = null;
+	self._start = function() {}; // Preven ProcessLauncher from taking over.
 
-SeleniumWebdriverBrowser.prototype.getSession_ = function(cb) {
-  var driver = this.driver_;
+	self.on('start', function(url) {
+		log.info('starting ' + self.name);
 
-  if(!driver){
-    return cb(null);
-  }
+		var driver = self._driver || getDriver();
+		driver.getSession()
+			.then(function(session){
+				self._driver = driver;
+				self.setName(browserNameFromCapabilities(session.getCapabilities()));
 
-  if(driver.session_ && driver.session_.then){
-    driver.session_.then(cb);
-  }else{
-    cb(driver.session_);
+				log.info('sending driver to url ' + url);
+				self._driver.navigate().to(url)
+					.catch( function(error) {
+						log.error('driver returned error: ' + error);
+						if(self._driver !== null) {
+							self._handleStartError(error);
+						}
+					});
+			})
+			.catch(function(error){
+				log.error('failed to get session from webdriver: ' + error);
+				self._handleStartError(error);
+			});
+	});
+
+	self.on('kill', function(done) {
+		if(self._driver) {
+			var driver = self._driver;
+			self._driver = null;
+
+			driver.quit()
+				.then(self._allDone.bind(self, done))
+				.catch(function(error){
+					log.info('error while quittin session: ' + error);
+					self._allDone(done);
+				});
+		} else {
+			done();
+		}
+	});
+
+	log.info('SeleniumWebdriverBrowser (kid:'+id+') created');
+}
+
+SeleniumWebdriverBrowser.prototype._allDone = function(doneCallback) {
+	this._done();
+	doneCallback();
+}
+
+SeleniumWebdriverBrowser.prototype._handleStartError = function(error) {
+	this._retryLimit = -1 // dont't retry
+	this._done(error);
+}
+
+SeleniumWebdriverBrowser.prototype.setName = function(newBrowserName) {
+  if(!!newBrowserName) {
+    this.name = newBrowserName + ' via Selenium Webdriver';
+    console.log('changed name to ' + this.name);
   }
 };
 
 SeleniumWebdriverBrowser.prototype.isCaptured = function(){
-  return !!this.driver_;
+  return !!this._driver;
 };
 
 SeleniumWebdriverBrowser.prototype.toString = function() {
   return this.name || 'Unnamed SeleniumWebdriverBrowser';
 };
+
+SeleniumWebdriverBrowser.$inject = ['id', 'baseBrowserDecorator', 'args', 'logger'];
 
 // PUBLISH DI MODULE
 module.exports = {
