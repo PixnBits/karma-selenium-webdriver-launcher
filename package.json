@@ -17,10 +17,9 @@
     "browser-stack"
   ],
   "dependencies": {
-    "q": "~0.9.6"
   },
   "peerDependencies": {
-    "karma": ">=0.9",
+    "karma": "^1.7.0",
     "selenium-webdriver": "^3.6.0"
   },
   "license": "MIT",
